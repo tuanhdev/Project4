@@ -12,8 +12,18 @@ import pickle
 @st.cache_resource
 def load_feature_extractor():
     base_model = InceptionV3(weights='imagenet')
-    model = Model(inputs=base_model.input, outputs=base_model.layers[-2].output)
+    model = Model(base_model.input, base_model.layers[-2].output)
     return model
+
+# Tải mô hình mô tả ảnh và tokenizer
+@st.cache_resource
+def load_caption_model():
+    return load_model('inception_caption_model.h5')
+
+@st.cache_resource
+def load_tokenizer():
+    with open('tokenizer.pkl', 'rb') as f:
+        return pickle.load(f)
 
 # Hàm trích xuất đặc trưng từ ảnh
 def extract_features(image):
@@ -23,33 +33,24 @@ def extract_features(image):
     feature = feature_extractor.predict(image, verbose=0)
     return feature
 
-# Tải mô hình sinh mô tả
-@st.cache_resource
-def load_inception_model():
-    return load_model('inception_caption_model.h5')
-
-# Tải tokenizer
-@st.cache_resource
-def load_tokenizer():
-    with open('tokenizer.pkl', 'rb') as f:
-        return pickle.load(f)
-
-# Hàm sinh mô tả từ ảnh
-def generate_caption(model, image, tokenizer, max_length):
+# Hàm sinh mô tả cho ảnh
+def generate_caption(model, image, tokenizer, max_length=35):
     in_text = 'startseq'
     image = extract_features(image)  # Trích xuất đặc trưng từ ảnh
     for _ in range(max_length):
         sequence = tokenizer.texts_to_sequences([in_text])[0]
         sequence = pad_sequences([sequence], maxlen=max_length)
+        
+        # Sử dụng mô hình để dự đoán từ tiếp theo
         yhat = model.predict([image, sequence], verbose=0)
         yhat = np.argmax(yhat)
         word = tokenizer.index_word.get(yhat)
-        if word is None:
+        
+        # Kiểm tra và thêm từ vào mô tả
+        if word is None or word == 'endseq':
             break
         in_text += ' ' + word
-        if word == 'endseq':
-            break
-    return in_text
+    return in_text.replace('startseq', '').replace('endseq', '').strip()
 
 # Ứng dụng Streamlit
 st.title("Image Caption Generator")
@@ -62,15 +63,15 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption='Hình ảnh đã tải lên.', use_column_width=True)
     
-    # Tiền xử lý hình ảnh
-    img = image.resize((299, 299))  # InceptionV3 cần ảnh kích thước 299x299
-    img = np.array(img)
-    
     # Tải mô hình và tokenizer
-    model = load_inception_model()
+    model = load_caption_model()
     tokenizer = load_tokenizer()
     
     if model is not None and tokenizer is not None:
+        # Tiền xử lý hình ảnh
+        img = image.resize((299, 299))  # Kích thước InceptionV3 yêu cầu
+        img = np.array(img)
+        
         # Sinh mô tả
-        caption = generate_caption(model, img, tokenizer, max_length=35)
+        caption = generate_caption(model, img, tokenizer)
         st.write("**Mô tả hình ảnh:**", caption)
