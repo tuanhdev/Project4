@@ -33,7 +33,7 @@ def extract_features(image, model):
     return model.predict(image)
 
 # Function to generate caption
-def generate_caption(model, features, tokenizer, max_length=34):
+def generate_caption(model, features, tokenizer, max_length=35):
     in_text = 'startseq'
     for _ in range(max_length):
         sequence = tokenizer.texts_to_sequences([in_text])[0]
