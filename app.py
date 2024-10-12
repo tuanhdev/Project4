@@ -31,6 +31,12 @@ def generate_caption(model, image, tokenizer, max_length):
     for _ in range(max_length):
         sequence = tokenizer.texts_to_sequences([in_text])[0]
         sequence = pad_sequences([sequence], maxlen=max_length)
+        
+        # Kiểm tra đầu vào của mô hình để phát hiện lỗi sớm
+        st.write("Image input shape:", image.shape)
+        st.write("Sequence input shape:", sequence.shape)
+
+        # Sử dụng mô hình để dự đoán
         yhat = model.predict([image, sequence], verbose=0)
         yhat = np.argmax(yhat)
         word = tokenizer.index_word.get(yhat)
