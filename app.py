@@ -46,7 +46,7 @@ def sample(preds, temperature=1.0):
     return np.argmax(probas)
 
 # Function to generate captions
-def generate_caption(model, features, tokenizer, max_length=34, temperature=0.8):
+def generate_caption(model, features, tokenizer, max_length=35, temperature=0.8):
     in_text = 'startseq'
     for _ in range(max_length):
         sequence = tokenizer.texts_to_sequences([in_text])[0]
