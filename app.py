@@ -33,20 +33,34 @@ def extract_features(image, model):
     return model.predict(image)
 
 # Function to generate caption
-def generate_caption(model, features, tokenizer, max_length=35):
+def generate_caption(model, features, tokenizer, max_length=34, temperature=0.8):
     in_text = 'startseq'
     for _ in range(max_length):
         sequence = tokenizer.texts_to_sequences([in_text])[0]
         sequence = pad_sequences([sequence], maxlen=max_length)
-        yhat = model.predict([features, sequence], verbose=0)
-        yhat = np.argmax(yhat)
-        word = tokenizer.index_word.get(yhat)
+        
+        # Dự đoán từ tiếp theo
+        preds = model.predict([features, sequence], verbose=0)
+        preds = preds.flatten()
+        
+        # Lấy từ tiếp theo với temperature
+        next_word_index = sample(preds, temperature)
+        word = tokenizer.index_word.get(next_word_index)
+        
         if word is None:
             break
-        in_text += ' ' + word
         if word == 'endseq':
             break
-    return in_text
+
+        # Thêm từ vào chuỗi in_text
+        in_text += ' ' + word
+
+        # Dừng lại nếu từ bị lặp nhiều lần
+        if in_text.split()[-2:] == [word, word]:
+            break
+            
+    return in_text.replace('startseq', '').replace('endseq', '').strip()
+
 
 # Streamlit App
 st.title("Image Caption Generator")
