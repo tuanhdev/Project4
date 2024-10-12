@@ -80,9 +80,12 @@ st.title("Image Caption Generator")
 uploaded_file = st.file_uploader("Choose an image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Display image
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded Image.', use_column_width=True)
+    try:
+        image = Image.open(uploaded_file)
+        st.image(image, caption='Uploaded Image.', use_column_width=True)
+    except Exception as e:
+        st.error(f"Error loading image: {e}")
+
 
     # Load models and tokenizer
     inception_model = load_inception_model()
