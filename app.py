@@ -72,5 +72,5 @@ if uploaded_file is not None:
     
     if model is not None and tokenizer is not None:
         # Sinh mô tả
-        caption = generate_caption(model, img, tokenizer, max_length=34)
+        caption = generate_caption(model, img, tokenizer, max_length=35)
         st.write("**Mô tả hình ảnh:**", caption)
