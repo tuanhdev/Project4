@@ -32,12 +32,22 @@ def extract_features(image, model):
     image = preprocess_input(image)
     return model.predict(image)
 
-# Function to generate caption
+import numpy as np
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+def sample(preds, temperature=1.0):
+    preds = np.asarray(preds).astype('float64')
+    preds = np.log(preds + 1e-8) / temperature  # Thêm temperature vào đây để điều chỉnh ngẫu nhiên
+    exp_preds = np.exp(preds)
+    preds = exp_preds / np.sum(exp_preds)
+    probas = np.random.multinomial(1, preds, 1)
+    return np.argmax(probas)
+
 def generate_caption(model, features, tokenizer, max_length=34, temperature=0.8):
     in_text = 'startseq'
     for _ in range(max_length):
         sequence = tokenizer.texts_to_sequences([in_text])[0]
-        sequence = pad_sequences([sequence], maxlen=max_length)
+        sequence = pad_sequences([sequence], maxlen=max_length, padding='post')
         
         # Dự đoán từ tiếp theo
         preds = model.predict([features, sequence], verbose=0)
@@ -55,11 +65,12 @@ def generate_caption(model, features, tokenizer, max_length=34, temperature=0.8)
         # Thêm từ vào chuỗi in_text
         in_text += ' ' + word
 
-        # Dừng lại nếu từ bị lặp nhiều lần
-        if in_text.split()[-2:] == [word, word]:
+        # Dừng lại nếu từ bị lặp lại nhiều lần
+        last_words = in_text.split()[-3:]  # Kiểm tra ba từ cuối cùng
+        if len(set(last_words)) == 1:  # Nếu cả ba từ giống nhau, dừng lại
             break
             
-    return in_text.replace('startseq', '').replace('endseq', '').strip()
+    return in_text.replace('startseq', '').strip()
 
 
 # Streamlit App
