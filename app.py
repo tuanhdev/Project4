@@ -32,10 +32,10 @@ def generate_caption(model, image, tokenizer, max_length):
         sequence = tokenizer.texts_to_sequences([in_text])[0]
         sequence = pad_sequences([sequence], maxlen=max_length)
         
-        # Kiểm tra đầu vào của mô hình để phát hiện lỗi sớm
-        st.write("Image input shape:", image.shape)
-        st.write("Sequence input shape:", sequence.shape)
-
+        # Đảm bảo các đầu vào có kiểu dữ liệu đúng
+        image = image.astype('float32')
+        sequence = sequence.astype('float32')
+        
         # Sử dụng mô hình để dự đoán
         yhat = model.predict([image, sequence], verbose=0)
         yhat = np.argmax(yhat)
@@ -46,6 +46,7 @@ def generate_caption(model, image, tokenizer, max_length):
         if word == 'endseq':
             break
     return in_text
+
 
 # Ứng dụng Streamlit
 st.title("Image Caption Generator")
